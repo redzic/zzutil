@@ -16,8 +16,17 @@
 
 #include "memcount.h"
 
-#define likely(x) __builtin_expect((x), 1)
-#define unlikely(x) __builtin_expect((x), 0)
+#if _MSC_VER
+
+#define zz_likely(x) (x)
+#define zz_unlikely(x) (x)
+
+#else
+
+#define zz_likely(x) __builtin_expect((x), 1)
+#define zz_unlikely(x) __builtin_expect((x), 0)
+
+#endif
 
 /*
  * Returns the page size (in bytes).
@@ -66,14 +75,14 @@ int main(int argc, char **argv) {
   while (1) {
     size_t nread = fread(buffer, 1, bufsize, file);
 
-    if (unlikely(nread != bufsize && ferror(file))) {
+    if (zz_unlikely(nread != bufsize && ferror(file))) {
       printf("wc: error reading file '%s': %s\n", argv[1], strerror(errno));
       return 1;
     }
 
     num_lines += memcount(buffer, nread);
 
-    if (unlikely(nread < bufsize && feof(file))) {
+    if (zz_unlikely(nread < bufsize && feof(file))) {
       break;
     }
   }
