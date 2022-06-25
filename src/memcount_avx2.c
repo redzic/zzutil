@@ -24,7 +24,6 @@ size_t memcount(const uint8_t *s, size_t n) {
   const __m256i zv = _mm256_setzero_si256();
 
   const uint8_t *end_ptr = s + FULL_ITER_SIZE * (n / FULL_ITER_SIZE);
-#pragma unroll 1
   while (s != end_ptr) {
     // local accumulator registers
     __m256i x0 = _mm256_setzero_si256();
@@ -60,7 +59,6 @@ size_t memcount(const uint8_t *s, size_t n) {
 
     __m256i lastsum = _mm256_setzero_si256();
 
-#pragma unroll 2
     while (s != end_ptr) {
       __m256i cmp =
           _mm256_cmpeq_epi8(needle, _mm256_load_si256((const __m256i *)s));
