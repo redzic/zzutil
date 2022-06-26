@@ -16,6 +16,12 @@
 
 #include "memcount.h"
 
+#if _WIN32
+
+#include <malloc.h>
+
+#endif
+
 #if _MSC_VER
 
 #define zz_likely(x) (x)
@@ -38,6 +44,25 @@ size_t get_page_size() {
   return si.dwPageSize;
 #else
   return sysconf(_SC_PAGESIZE);
+#endif
+}
+
+/* Aligned malloc. */
+void *zz_align_malloc(size_t size, size_t alignment) {
+#if _WIN32
+  return _aligned_malloc(size, alignment);
+#else
+  /* C11 aligned_alloc passes alignment first, and then size. */
+  return aligned_alloc(alignment, size);
+#endif
+}
+
+/* Free memory allocated with zz_align_malloc */
+void zz_align_free(void *ptr) {
+#if _WIN32
+  _aligned_free(ptr);
+#else
+  free(ptr);
 #endif
 }
 
@@ -70,7 +95,7 @@ int main(int argc, char **argv) {
   uint64_t num_lines = 0;
 
   size_t bufsize = AVX_ALIGN * ((PAGE_SIZE_MULT * get_page_size()) / AVX_ALIGN);
-  uint8_t *buffer = aligned_alloc(AVX_ALIGN, bufsize);
+  uint8_t *buffer = zz_align_malloc(bufsize, AVX_ALIGN);
 
   while (1) {
     size_t nread = fread(buffer, 1, bufsize, file);
@@ -89,6 +114,6 @@ int main(int argc, char **argv) {
 
   printf("%llu %s\n", num_lines, argv[1]);
 
-  free(buffer);
+  zz_align_free(buffer);
   fclose(file);
 }
